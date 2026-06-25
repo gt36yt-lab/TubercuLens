@@ -1,17 +1,14 @@
-# TubercuLens - An Image Based AI-Integrated Microscopic Detection System for Identifying Mycobacterium Tuberculosis
+# TubercuLens v5.5 - Mycobacterium Tuberculosis Detection System
 
-`v5.5` · Python 3.7+ · Flask · SQLite · Medical Imaging
+`v5.5` · Python 3.7+ · Flask · SQLite · Medical Imaging · YOLOv8 · RoboFlow
 
 A Flask-based web application that uses AI/ML technology to detect tuberculosis (TB) in chest X-ray images. TubercuLens provides automated batch processing, patient record management, and comprehensive reporting for TB detection and analysis.
 
-### Authors:
+### Authors
 
-**Lead Developer**: PLEMA Research Team-
-Ali R. Goyena,
-Angela Marie B. Oasay,
-Edreah Eve I. Estimo,
+**Lead Developer**: PLEMA Research Team - Ali R. Goyena, Angela Marie B. Oasay, Edreah Eve I. Estimo
 
-**Focus**: Medical Image Analysis & TB Detection System
+**Focus**: AI-enabled Medical Image Analysis & TB Detection System
 
 ## 📋 Key Features
 
@@ -214,3 +211,4 @@ This project is provided for research and educational purposes.
 **Version**: TubercuLens v5.5 (Batch Processing Complete)  
 **Status**: Active Development  
 **Built for**: Medical Research & Clinical Education
+[README.md](https://github.com/user-attachments/files/29342338/README.md)
