@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TubercuLens | Mycobacterium Tuberculosis Detection System</title>
+    
+    <link rel="icon" href="{{ url_for('static', filename='school_logo.png') }}" type="image/png">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.net.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.0/vanilla-tilt.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        .hidden-section { display: none !important; }
+        .active-nav { 
+            background: rgba(255, 255, 255, 0.1) !important; 
+            color: #fbbf24 !important; 
+            border-left: 4px solid #fbbf24;
+            backdrop-filter: blur(5px);
+        }
+        #processing-view { display: none; text-align: center; color: white; }
+        .chart-container { position: relative; height: 250px; width: 100%; }
+        
+        /* Side-by-Side Specific Styles */
+        .side-by-side-container {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        .side-img-box {
+            flex: 1;
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .side-img-box img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            display: block;
+        }
+        .side-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            font-size: 10px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            backdrop-filter: blur(4px);
+            z-index: 5;
+        }
+        .side-badge.red { border: 1px solid #ef4444; color: #ef4444; }
+
+        /* BATCH GRID STYLES */
+        .batch-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+        .batch-item {
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: 0.2s;
+        }
+        .batch-item:hover {
+            border-color: #fbbf24;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .batch-img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .batch-info {
+            padding: 12px;
+            font-size: 11px;
+        }
+        .batch-pill {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-top: 5px;
+            font-size: 10px;
+        }
+        .batch-pos {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.4);
+        }
+        .batch-neg {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.4);
+        }
+    </style>
+</head>
+<body>
+    
+    <div id="vanta-bg"></div>
+
+    <div class="sidebar glass-panel">
+        <div class="school-header">
+            <img src="{{ url_for('static', filename='school_logo.png') }}" alt="School Logo" class="school-logo">
+            <div class="school-name" style="font-size:1.4em; font-weight:bold; text-transform:uppercase;">TubercuLens</div>
+        </div>
+
+        <div style="margin-bottom: 40px;">
+            <div class="brand"><span style="font-size:1.2em; color:#fbbf24; font-weight:bold; text-transform:uppercase;">Tuberculens</span> <i class="fas fa-microscope" style="color: #fbbf24; font-size: 0.8em;"></i></div>
+            <div class="brand-sub">Mycobacterium Tuberculosis Detection System</div>
+        </div>
+        
+        <div class="nav-menu">
+            <div id="btn-console" class="nav-item active-nav" onclick="switchTab('console')">
+                <i class="fas fa-desktop"></i> Console
+            </div>
+            <div id="btn-stats" class="nav-item" onclick="switchTab('stats')">
+                <i class="fas fa-chart-pie"></i> Analytics
+            </div>
+            <div id="btn-records" class="nav-item" onclick="switchTab('records')">
+                <i class="fas fa-database"></i> Database
+            </div>
+            <div id="btn-settings" class="nav-item" onclick="switchTab('settings')">
+                <i class="fas fa-cogs"></i> System
+            </div>
+        </div>
+        
+        <div class="authors-box glass-card-sm">
+            STATUS: <span style="color:#34d399; font-weight:bold;">{{ system_status }}</span><br>
+            <span style="font-size:10px; opacity:0.7;">KcnhsV2</span>
+        </div>
+    </div>
+
+    <div class="main-content">
+        
+        <div class="header">
+            <div class="page-title">
+                <h1 id="page-heading">Diagnostic Console</h1>
+                <p>Mycobacterium Tuberculosis Detection System (TubercuLens)</p>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <div class="status-badge glass-card-sm">
+                    <i class="fas fa-shield-alt"></i> CLINICAL MODE
+                </div>
+                <a href="{{ url_for('logout') }}" class="glass-card-sm" style="padding: 10px 15px; text-decoration: none; color: #fbbf24; font-size: 12px; border-radius: 8px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); cursor: pointer; transition: 0.3s; display: inline-flex; align-items: center; gap: 8px;" onmouseover="this.style.background='rgba(239, 68, 68, 0.2)'" onmouseout="this.style.background='rgba(239, 68, 68, 0.1)'">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </div>
+
+        <div id="section-console">
+            <div class="grid-container">
+                
+                <div class="card glass-card" data-tilt data-tilt-max="3" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.1">
+                    <div class="card-title"><i class="fas fa-user-injured"></i> Patient / Batch Data</div>
+                    
+                    <form action="/" method="POST" enctype="multipart/form-data" onsubmit="showLoading()">
+                        <div class="form-group">
+                            <label>Patient ID / Batch Prefix</label>
+                            <input type="text" name="patient_id" class="glass-input" placeholder="e.g. TB-001 or BATCH-A" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Full Name / Batch Description</label>
+                            <input type="text" name="patient_name" class="glass-input" placeholder="Patient Name or Description" required>
+                        </div>
+                        <div style="display:flex; gap:15px;">
+                            <div class="form-group" style="flex:1;">
+                                <label>Age (Optional for Batch)</label>
+                                <input type="number" name="patient_age" class="glass-input">
+                            </div>
+                            <div class="form-group" style="flex:1;">
+                                <label>Sex (Optional for Batch)</label>
+                                <select name="patient_sex" class="glass-input">
+                                    <option>Male</option>
+                                    <option>Female</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="upload-area glass-input">
+                            <input type="file" name="image" id="file-input" class="file-input" accept=".jpg,.png,.jpeg" multiple onchange="previewFile()">
+                            <div class="upload-label">
+                                <i class="fas fa-dna" style="font-size: 30px; margin-bottom: 10px; color: #fbbf24;"></i><br>
+                                <span id="file-name">Upload Sputum Sample(s)</span>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-analyze glass-btn">
+                            <i class="fas fa-bolt"></i> INITIATE AI ANALYSIS
+                        </button>
+                    </form>
+                </div>
+
+                <div class="card glass-card gold-border" data-tilt data-tilt-max="3" data-tilt-speed="400">
+                    <div class="card-title"><i class="fas fa-poll"></i> Analysis Results</div>
+                    
+                    {% if show_results %}
+                        
+                        {% if batch_mode %}
+                            <div class="result-stats">
+                                <div class="stat-box glass-card-sm">
+                                    <div class="stat-number">{{ batch_total }}</div>
+                                    <div class="stat-label">Samples Processed</div>
+                                </div>
+                                <div class="stat-box glass-card-sm">
+                                    <div class="stat-number" style="color:#ef4444;">{{ batch_pos }}</div>
+                                    <div class="stat-label">Positive Cases</div>
+                                </div>
+                            </div>
+                            
+                            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px; margin-top: 15px;">PROCESSED BATCH GRID:</div>
+                            
+                            <div class="batch-grid">
+                                {% for res in batch_results %}
+                                <div class="batch-item">
+                                    <img src="{{ res.out_url }}" class="batch-img">
+                                    <div class="batch-info">
+                                        <div style="font-weight:bold; color:white; font-size:12px;">{{ res.id }}</div>
+                                        <div style="color: #94a3b8; font-size: 10px; margin-bottom: 5px;">{{ res.filename }}</div>
+                                        
+                                        <span class="batch-pill {{ 'batch-pos' if res.status == 'POSITIVE' else 'batch-neg' }}">
+                                            {{ res.status }} ({{ res.count }})
+                                        </span>
+                                        
+                                        <div style="margin-top:8px;">
+                                            <a href="{{ res.report_url }}" target="_blank" class="link-gold" style="font-size:10px;">
+                                                <i class="fas fa-file-pdf"></i> Download PDF
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+
+                        {% else %}
+                            <div class="result-stats">
+                                <div class="stat-box glass-card-sm">
+                                    <div class="stat-number">{{ mtb_count }}</div>
+                                    <div class="stat-label">Pathogens</div>
+                                </div>
+                                <div class="stat-box glass-card-sm">
+                                    <div class="stat-number" style="color:#34d399;">{{ current_conf }}%</div>
+                                    <div class="stat-label">Confidence</div>
+                                </div>
+                            </div>
+
+                            <div class="view-controls">
+                                <button class="view-btn active" onclick="setViewMode('slider')"><i class="fas fa-arrows-alt-h"></i> Slider</button>
+                                <button class="view-btn" onclick="setViewMode('microscope')"><i class="fas fa-search-plus"></i> Microscope</button>
+                                <button class="view-btn" onclick="setViewMode('sidebyside')"><i class="fas fa-columns"></i> Side-by-Side</button>
+                            </div>
+
+                            <div id="view-slider" class="img-comp-container">
+                                <div class="img-comp-img">
+                                    <img src="{{ out_url }}" width="100%"> 
+                                </div>
+                                <div class="img-comp-img img-comp-overlay">
+                                    <img src="{{ orig_url }}" width="100%"> 
+                                </div>
+                            </div>
+
+                            <div id="view-microscope" class="zoom-container" style="display:none;">
+                                <img id="zoom-target" src="{{ out_url }}" width="100%" height="100%" style="object-fit:cover;">
+                                <div id="zoom-lens" class="zoom-lens"></div>
+                            </div>
+
+                            <div id="view-sidebyside" class="side-by-side-container" style="display:none;">
+                                <div class="side-img-box">
+                                    <span class="side-badge">Original</span>
+                                    <img src="{{ orig_url }}">
+                                </div>
+                                <div class="side-img-box">
+                                    <span class="side-badge red">Analyzed</span>
+                                    <img src="{{ out_url }}">
+                                </div>
+                            </div>
+
+                            <a href="{{ report_url }}" target="_blank" class="btn-download glass-btn" style="margin-top: 20px;">
+                                <i class="fas fa-file-pdf"></i> OPEN OFFICIAL REPORT
+                            </a>
+                        {% endif %}
+
+                    {% else %}
+                        <div id="ready-view" class="empty-state">
+                            <div class="glass-card-sm" style="border-radius: 50%; width: 90px; height: 90px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; box-shadow: 0 0 30px rgba(251, 191, 36, 0.15); border: 1px solid rgba(251, 191, 36, 0.3);">
+                                <i class="fas fa-microscope" style="font-size: 40px; color: #fbbf24;"></i>
+                            </div>
+                            <div style="text-align: center; color: #94a3b8;">
+                                <strong style="font-size: 20px; color: white; letter-spacing: 1px;">SYSTEM READY</strong><br>
+                                <span style="font-size: 13px; opacity: 0.7; margin-top: 8px; display: block;">
+                                    Awaiting Sputum Micrograph Input...<br>
+                                    (Supports Batch Upload up to 300)
+                                </span>
+                            </div>
+                        </div>
+
+                        <div id="processing-view" style="display:none; height: 300px; flex-direction: column; align-items: center; justify-content: center;">
+                            <div class="loader-3d" style="width: 50px; height: 50px; border: 4px solid rgba(255, 255, 255, 0.1); border-left-color: var(--gold); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                            <div style="margin-top: 25px; color: #fbbf24; font-weight: bold; letter-spacing: 1px;">
+                                PROCESSING MICROGRAPH...
+                            </div>
+                            <div style="font-size: 12px; color: #94a3b8; margin-top: 5px;">Running YOLOv8 Inference</div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div id="section-stats" class="hidden-section">
+            <div class="card glass-card" style="margin-bottom: 20px;">
+                <div class="card-title">Week Selection</div>
+                <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 150px;">
+                        <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 5px;">Start Date</label>
+                        <input type="date" id="analyticsStartDate" class="glass-input" value="{{ week_start }}" onchange="updateAnalyticsByDateRange()">
+                    </div>
+                    <div style="flex: 1; min-width: 150px;">
+                        <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 5px;">End Date</label>
+                        <input type="date" id="analyticsEndDate" class="glass-input" value="{{ week_end }}" onchange="updateAnalyticsByDateRange()">
+                    </div>
+                    <div style="flex: 1; min-width: 150px;">
+                        <label style="display: block; font-size: 12px; color: #94a3b8; margin-bottom: 5px;"> </label>
+                        <button onclick="resetToCurrentWeek()" class="glass-btn" style="width: 100%; padding: 10px 15px; font-size: 12px;">
+                            <i class="fas fa-redo"></i> This Week
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid-container">
+                <div class="card glass-card">
+                    <div class="card-title">Prevalence Rate</div>
+                    <div class="chart-container">
+                        <canvas id="chartPositivity"></canvas>
+                    </div>
+                </div>
+                <div class="card glass-card">
+                    <div class="card-title">Case Detection Timeline</div>
+                    <div class="chart-container">
+                        <canvas id="chartTimeline"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="grid-container" style="margin-top: 20px; grid-template-columns: 1fr 1fr 1fr;">
+                <div class="card glass-card" style="text-align:center;">
+                    <div style="font-size: 12px; color: #94a3b8;">TOTAL SCREENED</div>
+                    <div id="stat-total" style="font-size: 36px; color: white; font-weight: 800;">0</div>
+                </div>
+                <div class="card glass-card" style="text-align:center;">
+                    <div style="font-size: 12px; color: #94a3b8;">TOTAL POSITIVE</div>
+                    <div id="stat-positive" style="font-size: 36px; color: #ef4444; font-weight: 800;">0</div>
+                </div>
+                <div class="card glass-card" style="text-align:center;">
+                    <div style="font-size: 12px; color: #94a3b8;">DETECTION RATE</div>
+                    <div id="stat-rate" style="font-size: 36px; color: #fbbf24; font-weight: 800;">0%</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="section-records" class="hidden-section">
+            <div class="card glass-card">
+                <div class="card-title">Secure Patient Database</div>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <a href="/export_data" class="glass-btn" style="width: auto; display: inline-block; padding: 10px 20px; text-decoration: none; color: #0f172a;">
+                        <i class="fas fa-file-excel"></i> Export Database to CSV
+                    </a>
+                    <button onclick="confirmClearData()" class="glass-btn" style="width: auto; padding: 10px 20px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; font-weight: bold;" title="Clear all analytics data - this action cannot be undone">
+                        <i class="fas fa-trash-alt"></i> Clear All Data
+                    </button>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="glass-table" id="recordsTable">
+                        <thead>
+                            <tr><th>ID</th><th>Name</th><th>Date</th><th>Result</th><th>Report</th></tr>
+                        </thead>
+                        <tbody>
+                            {% if records %}
+                                {% for row in records %}
+                                <tr>
+                                    <td style="font-weight:bold; color: #fbbf24;">{{ row.patient_id }}</td>
+                                    <td>{{ row.name }}</td>
+                                    <td class="record-date">{{ row.date_added }}</td>
+                                    <td><span class="status-pill {{ 'positive' if row.status == 'POSITIVE' else 'negative' }}">{{ row.status }}</span></td>
+                                    <td><a href="{{ url_for('static', filename=row.report_path) }}" target="_blank" class="link-gold">View PDF</a></td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr><td colspan="5" style="text-align:center; padding:30px;">No records found.</td></tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="section-settings" class="hidden-section">
+            <div class="card glass-card" style="max-width: 600px;">
+                <div class="card-title">AI Model Calibration</div>
+                <form action="/" method="POST">
+                    <div class="form-group">
+                        <label>Confidence Threshold</label>
+                        <div style="display:flex; align-items:center; gap:15px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px;">
+                            <input type="range" name="setting_conf" min="10" max="90" value="{{ current_conf }}" 
+                                   style="flex:1; cursor: pointer;" oninput="document.getElementById('conf-output').value = this.value">
+                            <span style="font-weight:bold; color:#fbbf24; font-size: 20px;">
+                                <output id="conf-output">{{ current_conf }}</output>%
+                            </span>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-analyze glass-btn">Save Configuration</button>
+                </form>
+            </div>
+
+            <div class="card glass-card" style="max-width: 600px; margin-top: 20px;">
+                <div class="card-title">Account Credentials</div>
+                <form action="/" method="POST">
+                    <div class="form-group">
+                        <label>New Username</label>
+                        <input type="text" name="new_username" class="glass-input" placeholder="Enter new username (min 3 characters)" value="" required>
+                    </div>
+                    <div class="form-group">
+                        <label>New Password</label>
+                        <input type="password" name="new_password" class="glass-input" placeholder="Enter new password (min 4 characters)" value="" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Confirm New Password</label>
+                        <input type="password" name="confirm_new_password" class="glass-input" placeholder="Confirm new password" value="" required>
+                    </div>
+                    <button type="submit" name="change_credentials" value="true" class="btn-analyze glass-btn" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border: 1px solid rgba(59, 130, 246, 0.3);">
+                        <i class="fas fa-key"></i> Update Credentials
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Hidden Clear Data Form -->
+    <form id="clearDataForm" action="/clear_data" method="POST" style="display:none;"></form>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            VANTA.NET({
+                el: "#vanta-bg",
+                mouseControls: true, touchControls: true, gyroControls: false,
+                minHeight: 200.00, minWidth: 200.00,
+                scale: 1.00, scaleMobile: 1.00,
+                color: 0xfbbf24, backgroundColor: 0x0f172a,
+                points: 12.00, maxDistance: 22.00, spacing: 18.00
+            })
+            updateAnalytics();
+            
+            // Editor-Friendly Check for Single Result View
+            const hasResults = "{{ show_results }}" === "True";
+            const isBatch = "{{ batch_mode }}" === "True";
+
+            if (hasResults && !isBatch) {
+                setTimeout(initComparisons, 500);
+            }
+        });
+
+        function previewFile() {
+            const input = document.getElementById('file-input');
+            const nameLabel = document.getElementById('file-name');
+            
+            if(input.files.length > 1) {
+                // Batch Mode Text
+                nameLabel.innerText = input.files.length + " Files Selected";
+                nameLabel.style.color = "#fbbf24";
+                nameLabel.style.fontWeight = "bold";
+            } else if (input.files.length === 1) {
+                // Single Mode Text
+                nameLabel.innerText = input.files[0].name;
+                nameLabel.style.color = "#fbbf24";
+                nameLabel.style.fontWeight = "bold";
+            }
+        }
+
+        function showLoading() {
+            document.getElementById('ready-view').style.display = 'none';
+            document.getElementById('processing-view').style.display = 'flex';
+        }
+
+        function switchTab(tabName) {
+            ['console', 'stats', 'records', 'settings'].forEach(t => {
+                const sec = document.getElementById('section-' + t);
+                const btn = document.getElementById('btn-' + t);
+                if(sec) sec.classList.add('hidden-section');
+                if(btn) btn.classList.remove('active-nav');
+            });
+            const activeSec = document.getElementById('section-' + tabName);
+            const activeBtn = document.getElementById('btn-' + tabName);
+            if(activeSec) activeSec.classList.remove('hidden-section');
+            if(activeBtn) activeBtn.classList.add('active-nav');
+
+            const titles = { 'console': 'Diagnostic Console', 'stats': 'Epidemiological Analytics', 'records': 'Secure Database', 'settings': 'System Calibration' };
+            document.getElementById('page-heading').innerText = titles[tabName];
+            
+            if(tabName === 'stats') updateAnalytics();
+        }
+
+        // ANALYTICS
+        let chart1 = null, chart2 = null;
+        function updateAnalytics() {
+            const rows = document.querySelectorAll("#recordsTable tbody tr");
+            let positive = 0, negative = 0;
+            rows.forEach(row => {
+                const status = row.querySelector(".status-pill");
+                if(status) { if(status.innerText.includes("POSITIVE")) positive++; else negative++; }
+            });
+            const total = positive + negative;
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-positive').innerText = positive;
+            document.getElementById('stat-rate').innerText = total > 0 ? Math.round((positive/total)*100) + "%" : "0%";
+
+            if(document.getElementById('chartPositivity')) {
+                if(chart1) chart1.destroy();
+                chart1 = new Chart(document.getElementById('chartPositivity').getContext('2d'), {
+                    type: 'doughnut',
+                    data: { labels: ['Positive', 'Negative'], datasets: [{ data: [positive, negative], backgroundColor: ['#ef4444', '#10b981'], borderWidth: 0 }] },
+                    options: { plugins: { legend: { labels: { color: 'white' } } } }
+                });
+            }
+
+            if(document.getElementById('chartTimeline')) {
+                if(chart2) chart2.destroy();
+                chart2 = new Chart(document.getElementById('chartTimeline').getContext('2d'), {
+                    type: 'bar',
+                    data: { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'], datasets: [{ label: 'Cases', data: [total>0?total:5, 8, 12, 7, 15], backgroundColor: '#fbbf24', borderRadius: 5 }] },
+                    options: { scales: { y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.1)' } }, x: { ticks: { color: '#94a3b8' } } }, plugins: { legend: { display: false } } }
+                });
+            }
+        }
+
+        // DATE RANGE ANALYTICS
+        function updateAnalyticsByDateRange() {
+            const startDate = document.getElementById('analyticsStartDate').value;
+            const endDate = document.getElementById('analyticsEndDate').value;
+            
+            if (!startDate || !endDate) return;
+            
+            fetch(`/api/analytics?start_date=${startDate}&end_date=${endDate}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('stat-total').innerText = data.total;
+                    document.getElementById('stat-positive').innerText = data.positive;
+                    document.getElementById('stat-rate').innerText = data.rate + "%";
+                    
+                    if(chart1) chart1.destroy();
+                    chart1 = new Chart(document.getElementById('chartPositivity').getContext('2d'), {
+                        type: 'doughnut',
+                        data: { labels: ['Positive', 'Negative'], datasets: [{ data: [data.positive, data.negative], backgroundColor: ['#ef4444', '#10b981'], borderWidth: 0 }] },
+                        options: { plugins: { legend: { labels: { color: 'white' } } } }
+                    });
+                    
+                    if(chart2) chart2.destroy();
+                    chart2 = new Chart(document.getElementById('chartTimeline').getContext('2d'), {
+                        type: 'bar',
+                        data: { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], datasets: [{ label: 'Cases', data: [data.total>0?data.total:0, 0, 0, 0, 0, 0, 0], backgroundColor: '#fbbf24', borderRadius: 5 }] },
+                        options: { scales: { y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.1)' } }, x: { ticks: { color: '#94a3b8' } } }, plugins: { legend: { display: false } } }
+                    });
+                })
+                .catch(error => console.error('Error updating analytics:', error));
+        }
+
+        function resetToCurrentWeek() {
+            const today = new Date();
+            const monday = new Date(today);
+            monday.setDate(today.getDate() - today.getDay() + 1);
+            const sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6);
+            
+            const formatDate = (date) => date.toISOString().split('T')[0];
+            document.getElementById('analyticsStartDate').value = formatDate(monday);
+            document.getElementById('analyticsEndDate').value = formatDate(sunday);
+            
+            updateAnalyticsByDateRange();
+        }
+
+        // VIEW MODES
+        function setViewMode(mode) {
+            document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active')); event.target.classList.add('active');
+            
+            document.getElementById('view-slider').style.display = 'none';
+            document.getElementById('view-microscope').style.display = 'none';
+            document.getElementById('view-sidebyside').style.display = 'none';
+
+            if (mode === 'slider') {
+                document.getElementById('view-slider').style.display = 'block';
+                initComparisons();
+            } else if (mode === 'microscope') {
+                document.getElementById('view-microscope').style.display = 'block';
+                initMicroscope();
+            } else if (mode === 'sidebyside') {
+                document.getElementById('view-sidebyside').style.display = 'flex';
+            }
+        }
+
+        function initMicroscope() {
+            const img = document.getElementById("zoom-target"); const lens = document.getElementById("zoom-lens"); const cx = 2.5;
+            lens.style.backgroundImage = "url('" + img.src + "')"; lens.style.backgroundSize = (img.width * cx) + "px " + (img.height * cx) + "px";
+            img.addEventListener("mousemove", moveLens); lens.addEventListener("mousemove", moveLens); img.addEventListener("touchmove", moveLens);
+            img.addEventListener("mouseenter", () => lens.style.display = "block"); img.addEventListener("mouseleave", () => lens.style.display = "none");
+            function moveLens(e) {
+                e.preventDefault(); const pos = getCursorPos(e); let x = pos.x - (lens.offsetWidth / 2); let y = pos.y - (lens.offsetHeight / 2);
+                if (x > img.width - lens.offsetWidth) x = img.width - lens.offsetWidth; if (x < 0) x = 0;
+                if (y > img.height - lens.offsetHeight) y = img.height - lens.offsetHeight; if (y < 0) y = 0;
+                lens.style.left = x + "px"; lens.style.top = y + "px"; lens.style.backgroundPosition = "-" + (x * cx) + "px -" + (y * cx) + "px";
+            }
+            function getCursorPos(e) { e = e || window.event; let a = img.getBoundingClientRect(); return {x : (e.pageX - a.left) - window.pageXOffset, y : (e.pageY - a.top) - window.pageYOffset}; }
+        }
+
+        function initComparisons() {
+            var x = document.getElementsByClassName("img-comp-overlay");
+            for (var i = 0; i < x.length; i++) compareImages(x[i]);
+            function compareImages(img) {
+                var slider, clicked = 0, w = img.offsetWidth, h = img.offsetHeight;
+                img.style.width = (w / 2) + "px";
+                slider = document.createElement("DIV"); slider.setAttribute("class", "img-comp-slider");
+                img.parentElement.insertBefore(slider, img);
+                slider.style.top = (h / 2) - (slider.offsetHeight / 2) + "px"; slider.style.left = (w / 2) - (slider.offsetWidth / 2) + "px";
+                slider.addEventListener("mousedown", slideReady); window.addEventListener("mouseup", slideFinish);
+                function slideReady(e) { e.preventDefault(); clicked = 1; window.addEventListener("mousemove", slideMove); }
+                function slideFinish() { clicked = 0; }
+                function slideMove(e) { if (clicked == 0) return false; var pos = getCursorPos(e); if (pos < 0) pos = 0; if (pos > w) pos = w; slide(pos); }
+                function getCursorPos(e) { e = (e.changedTouches) ? e.changedTouches[0] : e; var a = img.getBoundingClientRect(); return e.pageX - a.left - window.pageXOffset; }
+                function slide(x) { img.style.width = x + "px"; slider.style.left = img.offsetWidth - (slider.offsetWidth / 2) + "px"; }
+            }
+        }
+
+        // CLEAR DATA CONFIRMATION
+        function confirmClearData() {
+            if(confirm("⚠️ WARNING: This will permanently delete ALL analytics data!\n\nThis action CANNOT be undone. Continue?")) {
+                if(confirm("⚠️ FINAL CONFIRMATION: Delete all records?\n\nClick OK to clear the database.")) {
+                    document.getElementById('clearDataForm').submit();
+                }
+            }
+        }
+    </script>
+</body>
+</html>;
