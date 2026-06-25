@@ -10,6 +10,7 @@ A Flask-based web application that uses AI/ML technology to detect tuberculosis 
 Ali R. Goyena
 Angela Marie B. Oasay
 Edreah Eve I. Estimo
+
 **Focus**: Medical Image Analysis & TB Detection System
 
 ## 📋 Key Features
