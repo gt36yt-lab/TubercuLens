@@ -1,4 +1,4 @@
-# TubercuLens v5.5 - Mycobacterium Tuberculosis Detection System
+# TubercuLens - An Image Based AI-Integrated Microscopic Detection System for Identifying Mycobacterium Tuberculosis
 
 `v5.5` · Python 3.7+ · Flask · SQLite · Medical Imaging
 
