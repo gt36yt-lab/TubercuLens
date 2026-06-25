@@ -1,6 +1,14 @@
-# TubercuLens v5.5 - Mycobacterium Tuberculosis Detection System
+[README.md](https://github.com/user-attachments/files/29342696/README.md)
+# TubercuLens - An Imaged-Based AI Integrated Microscopic Detection System for Identifying Mycobacterium tuberculosis in Sputum Smears
 
-`v5.5` · Python 3.7+ · Flask · SQLite · Medical Imaging · YOLOv8 · RoboFlow
+`v5.5` · Python 3.11+ · RoboFlow · YOLOv8 · MediaPipe · Flask
+
+[![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square)](https://python.org)
+[![RoboFlow](https://img.shields.io/badge/AI-RoboFlow-1a73e8?style=flat-square)](https://roboflow.com/)
+[![Flask](https://img.shields.io/badge/Web-Flask-000?style=flat-square&logo=flask)](https://flask.palletsprojects.com/)
+[![YOLOv8](https://img.shields.io/badge/AI-YOLOv8-00c853?style=flat-square)](https://ultralytics.com/)
+[![MediaPipe](https://img.shields.io/badge/AI-MediaPipe-FF6F00?style=flat-square)](https://mediapipe.dev/)
+[![License](https://img.shields.io/badge/License-Proprietary-red?style=flat-square)]()
 
 A Flask-based web application that uses AI/ML technology to detect tuberculosis (TB) in chest X-ray images. TubercuLens provides automated batch processing, patient record management, and comprehensive reporting for TB detection and analysis.
 
@@ -211,4 +219,3 @@ This project is provided for research and educational purposes.
 **Version**: TubercuLens v5.5 (Batch Processing Complete)  
 **Status**: Active Development  
 **Built for**: Medical Research & Clinical Education
-[README.md](https://github.com/user-attachments/files/29342338/README.md)
