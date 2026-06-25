@@ -6,7 +6,10 @@ A Flask-based web application that uses AI/ML technology to detect tuberculosis 
 
 ### Authors:
 
-**Lead Developer**: PLEMA Research Team  
+**Lead Developer**: PLEMA Research Team
+Ali R. Goyena
+Angela Marie B. Oasay
+Edreah Eve I. Estimo
 **Focus**: Medical Image Analysis & TB Detection System
 
 ## 📋 Key Features
